@@ -1,0 +1,25 @@
+<!doctype html>
+<title> ERHMAGOD REPORTS</title>
+<h1>REPORT STUFF</h1>
+Number of restaurants that have a rating: {{restaurants_with_rating}}
+
+Report history for noah
+
+<table>
+	<thead> 
+		<tr>
+			<th>First Name</th>
+			<th>Restaurant Name</th>
+			<th>Vote Date</th>
+		</tr>
+	</thead>
+	<tbody> 
+		{% for (vote, diner, restaurant) in noah_vote_history %}
+		<tr>
+			<td> {{diner.firstname}}</td>
+			<td> {{restaurant.name}}</td>
+			<td> {{vote.votedate}}</td>
+		</tr>
+		{% endfor %}
+	</tbody>
+</table>
