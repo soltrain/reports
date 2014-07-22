@@ -1,29 +1,59 @@
 import os
 from flask import Flask, render_template
-from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base
+from flask.json import jsonify 
+from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy import func
+from datetime import datetime, timedelta
 import pdb
-
 
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-
-    db_session = scoped_session(sessionmaker(autocommit=False,
-                                         autoflush=False,
-                                         bind=engine))
+    db_session = scoped_session(sessionmaker(bind=engine))
     Base.query = db_session.query_property()
-
     restaurants_with_rating = Restaurant.query.filter(Restaurant.likevotes+Restaurant.dislikevotes>5).count()
-    #returns instances of RestaurantVoteHistory, in order to get actual data, need to call method of the Class  
-    noah_vote_history = db_session.query(RestaurantVoteHistory, Diner, Restaurant).\
-                        join(Restaurant).join(Diner).filter(RestaurantVoteHistory.isvalid==1).\
-                        filter(Diner.dinerID==42).order_by(RestaurantVoteHistory.votedate.desc()).all()
-    #pdb.set_trace()
-    db_session.remove()
 
-    return render_template('index.html', restaurants_with_rating=restaurants_with_rating, noah_vote_history=noah_vote_history)
+    search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID == None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
+    search_volume_guest = [ [1000*convert_timestamp(timestamp), count] for (timestamp, count) in search_volume_guest if timestamp is not None]
+    search_volume_registered = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID != None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
+    search_volume_registered = [ [1000*convert_timestamp(timestamp), count] for (timestamp, count) in search_volume_registered if timestamp is not None]
+
+    recent_voters = db_session.query(func.count(RestaurantVoteHistory.voteID), Diner).join(Diner).filter(Diner.createDT>x_days_ago(21)).group_by(Diner.dinerID).order_by(func.count(RestaurantVoteHistory.voteID).desc()).all()
+  
+    diners = Diner.query.all()
+    db_session.remove()
+    return render_template('index.html', restaurants_with_rating=restaurants_with_rating, 
+                                         diners=diners, 
+                                         recent_voters=recent_voters, 
+                                         search_volume_guest=search_volume_guest,
+                                         search_volume_registered=search_volume_registered)
+
+@app.route('/vote_history/<diner_id>')
+def vote_history(diner_id):
+    db_session = scoped_session(sessionmaker(bind=engine))
+    Base.query = db_session.query_property()
+    
+    #returns instances of RestaurantVoteHistory, in order to get actual data, need to call method of the Class  
+    noah_vote_history_raw = db_session.query(RestaurantVoteHistory, Diner, Restaurant).\
+                             join(Restaurant).join(Diner).filter(RestaurantVoteHistory.isvalid==1).\
+                             filter(Diner.dinerID==diner_id).order_by(RestaurantVoteHistory.votedate.desc()).all()
+    timestamps = [ convert_timestamp(vote.votedate) for (vote, diner, restaurant) in noah_vote_history_raw ]
+    uniq_timestamps = set(timestamps)
+    noah_vote_history = [ [1000*timestamp, count_timestamps(timestamp, timestamps)] for timestamp in uniq_timestamps ] 
+
+    return jsonify({'data': noah_vote_history})
+
+def count_timestamps(timestamp, timestamps):
+    return sum([ 1 for t in timestamps if t == timestamp]) 
+
+def convert_timestamp(from_datetime): 
+   date = from_datetime.replace(minute=0, hour=0, second=0, microsecond=0)
+   return (date-datetime(1970, 1, 1)).total_seconds()
+
+def x_days_ago(days):
+   return datetime.now() - timedelta(days=days)
 
 if __name__ == '__main__':
     app.debug = True

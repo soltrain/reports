@@ -1,25 +1,89 @@
 <!doctype html>
-<title> ERHMAGOD REPORTS</title>
+<html>
+<head>
+	<title> ERHMAGOD REPORTS</title>
+	<script src="{{ url_for('static', filename='flot/jquery.js') }}"></script>
+	<script src="{{ url_for('static', filename='flot/jquery.flot.js') }}"></script>
+	<script src="{{ url_for('static', filename='flot/jquery.flot.time.js') }}"></script>
+	<script src="{{ url_for('static', filename='bootstrap3/js/bootstrap.js') }}"></script>
+	<script src="{{ url_for('static', filename='select2/select2.js') }}"></script>
+	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap3/css/bootstrap.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap3/css/bootstrap-theme.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='select2/select2.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='select2/select2-bootstrap.css') }}">
+</head>
+<body>
 <h1>REPORT STUFF</h1>
+<h1>Number of restaurants that have a rating</h1>
 Number of restaurants that have a rating: {{restaurants_with_rating}}
 
-Report history for noah
+<h2>"Search" volume by guests vs registered users</h2>
 
-<table>
-	<thead> 
+<div id="search-volume-guests" style="width: 500px; height: 500px"></div>
+
+<h2>Top voters in users who have registered within past 21 days</h2>
+
+<table class="table table-striped">
+	<thead>
 		<tr>
-			<th>First Name</th>
-			<th>Restaurant Name</th>
-			<th>Vote Date</th>
+			<th>Diner</th>
+			<th>Account creation date</th>
+			<th>Vote count</th>
 		</tr>
 	</thead>
-	<tbody> 
-		{% for (vote, diner, restaurant) in noah_vote_history %}
-		<tr>
-			<td> {{diner.firstname}}</td>
-			<td> {{restaurant.name}}</td>
-			<td> {{vote.votedate}}</td>
-		</tr>
-		{% endfor %}
+	<tbody>
+    {% for (vote_count, diner) in recent_voters %}
+    <tr>
+     <td>{{ diner.firstname }}</td>
+     <td>{{ diner.createDT }}</td>
+     <td>{{ vote_count }}</td>
+    </tr>
+    {% endfor %}
 	</tbody>
 </table>
+
+<h2>Vote history for user</h2>
+
+<select id="select-history-user">
+	<option>Select a user</option>
+	{% for diner in diners %}
+    <option value="{{ diner.dinerID }}">
+     {{ diner.firstname }} ({{ diner.dinerID }})
+    </option>
+	{% endfor %}
+</select>
+
+<div id="noah-vote-history" style="width: 500px; height: 500px;">
+</div>
+
+<script>
+  $(function(){
+
+  	var data_guest = $.parseJSON("{{ search_volume_guest|tojson }}");
+  	var data_registered = $.parseJSON("{{ search_volume_registered|tojson }}");
+
+    $.plot("#search-volume-guests", [{ label: "Guests", data: data_guest}, { label: "Registered", data: data_registered}], {
+	   xaxis: { mode: "time" }
+    });
+
+    $("#select-history-user").select2().on("change", function(event){ 
+      var dinerId = $(event.currentTarget).val();
+      if(!!!dinerId) return false; 
+
+      $.ajax({
+        url: "/vote_history/" + dinerId, 
+        type: "GET",
+        dataType: "json",
+        success: function(data) {
+        	$.plot("#noah-vote-history", [{ data: data.data, bars: { show: true }}], {
+				xaxis: { mode: "time" }
+			});
+        },
+        error: function() {
+        	alert("FUCKKKKKK for ID" + dinerId);
+        }
+      })
+
+    });   
+  })
+</script>

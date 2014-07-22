@@ -36,6 +36,14 @@ class RestaurantVoteHistory(Base):
 	restaurant = relationship("Restaurant")
 	diner = relationship("Diner")
 
+class SearchLog(Base):
+	__tablename__ = 'searchlog'
+	id = Column(Integer, primary_key=True)
+	DT = Column(DateTime)
+	IP = Column(String(50))
+	userID = Column(Integer)
+	
+
 
 
 # select COUNT(DISTINCT RestaurantID) from restaurant a where likevotes+dislikevotes>5;
