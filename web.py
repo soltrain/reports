@@ -55,7 +55,9 @@ def convert_timestamp(from_datetime):
 def x_days_ago(days):
    return datetime.now() - timedelta(days=days)
 
+# Vat does dis do?
 if __name__ == '__main__':
-    app.debug = True
-    app.run()
+    port = int(os.environ.get("PORT", 5000))
+    # app.debug = True
+    app.run(host='0.0.0.0', port=port)
     
