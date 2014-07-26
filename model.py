@@ -23,7 +23,7 @@ class Restaurant(Base):
 	likevotes = Column(Integer)
 	dislikevotes = Column(Integer)
 	name = Column(String)
-	isvalid = Column(Integer)
+	isValid = Column(Integer)
 
 class RestaurantVoteHistory(Base):
 	__tablename__ = 'restaurantvotehistory'
@@ -31,7 +31,7 @@ class RestaurantVoteHistory(Base):
 	fkrestaurantID = Column(Integer, ForeignKey('restaurant.restaurantID'))
 	votedate = Column(DateTime)
 	fkdinerID = Column(Integer, ForeignKey('diner.dinerID'))
-	isvalid = Column(Integer)
+	isValid = Column(Integer)
 
 	restaurant = relationship("Restaurant")
 	diner = relationship("Diner")
@@ -42,6 +42,26 @@ class SearchLog(Base):
 	DT = Column(DateTime)
 	IP = Column(String(50))
 	userID = Column(Integer)
+
+class RestaurantGallery(Base):
+	__tablename__ = 'restaurantgallery'
+	galleryID = Column(Integer, primary_key=True)
+	restaurantID = Column(Integer)
+	fkuserID = Column(Integer, ForeignKey('diner.dinerID'))
+	createDate = Column(DateTime)
+	isValid = Column(Integer)
+
+	diner = relationship("Diner")
+
+class Review(Base):
+	__tablename__ = 'reviews'
+	id = Column(Integer, primary_key=True)
+	fkrestaurantID = Column(Integer, ForeignKey('restaurant.restaurantID'))
+	dinerID = Column(Integer, ForeignKey('diner.dinerID'))
+	isValid = Column(Integer)
+
+	restaurant = relationship("Restaurant")
+	diner = relationship("Diner")
 	
 
 

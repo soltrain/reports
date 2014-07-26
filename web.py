@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template
 from flask.json import jsonify 
-from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog
+from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog, RestaurantGallery, Review
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -14,7 +14,12 @@ def index():
     db_session = scoped_session(sessionmaker(bind=engine))
     Base.query = db_session.query_property()
     restaurants_with_rating = Restaurant.query.filter(Restaurant.likevotes+Restaurant.dislikevotes>5).count()
-
+    restaurants_with_pictures = RestaurantGallery.query.distinct(RestaurantGallery.restaurantID).filter(RestaurantGallery.isValid==1).count()
+    # following doesn't work for some reason
+    # restaurants_with_reviews = Review.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID)
+    restaurants_with_reviews = db_session.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID).count()
+# select COUNT(DISTINCT RestaurantName) from reviews where isvalid = 1
+# select COUNT(DISTINCT restaurantID) from restaurantgallery  
     search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID == None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
     search_volume_guest = [ [1000*convert_timestamp(timestamp), count] for (timestamp, count) in search_volume_guest if timestamp is not None]
     search_volume_registered = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID != None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
@@ -24,7 +29,9 @@ def index():
   
     diners = Diner.query.all()
     db_session.remove()
-    return render_template('index.html', restaurants_with_rating=restaurants_with_rating, 
+    return render_template('index.html', restaurants_with_rating=restaurants_with_rating,
+                                         restaurants_with_pictures=restaurants_with_pictures,
+                                         restaurants_with_reviews=restaurants_with_reviews,    
                                          diners=diners, 
                                          recent_voters=recent_voters, 
                                          search_volume_guest=search_volume_guest,
@@ -37,7 +44,7 @@ def vote_history(diner_id):
     
     #returns instances of RestaurantVoteHistory, in order to get actual data, need to call method of the Class  
     noah_vote_history_raw = db_session.query(RestaurantVoteHistory, Diner, Restaurant).\
-                             join(Restaurant).join(Diner).filter(RestaurantVoteHistory.isvalid==1).\
+                             join(Restaurant).join(Diner).filter(RestaurantVoteHistory.isValid==1).\
                              filter(Diner.dinerID==diner_id).order_by(RestaurantVoteHistory.votedate.desc()).all()
     timestamps = [ convert_timestamp(vote.votedate) for (vote, diner, restaurant) in noah_vote_history_raw ]
     uniq_timestamps = set(timestamps)
@@ -58,6 +65,6 @@ def x_days_ago(days):
 # Vat does dis do?
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
-    # app.debug = True
+    app.debug = True
     app.run(host='0.0.0.0', port=port)
     

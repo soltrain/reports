@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-	<title> ERHMAGOD REPORTS</title>
+	<title> Reports! Reports for everyone!</title>
 	<script src="{{ url_for('static', filename='flot/jquery.js') }}"></script>
 	<script src="{{ url_for('static', filename='flot/jquery.flot.js') }}"></script>
 	<script src="{{ url_for('static', filename='flot/jquery.flot.time.js') }}"></script>
@@ -14,8 +14,10 @@
 </head>
 <body>
 <h1>REPORT STUFF</h1>
-<h1>Number of restaurants that have a rating</h1>
-Number of restaurants that have a rating: {{restaurants_with_rating}}
+<h2>Basic Restaurant Stats</h2>
+Number of restaurants that have a rating: {{restaurants_with_rating}} <br>
+Number of restaurants that have &gt;1 review: {{restaurants_with_reviews}} <br> 
+Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br> 
 
 <h2>"Search" volume by guests vs registered users</h2>
 
