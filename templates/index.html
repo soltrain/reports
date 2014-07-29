@@ -13,6 +13,7 @@
 	<link rel="stylesheet" href="{{ url_for('static', filename='select2/select2.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='select2/select2-bootstrap.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='datatables/jquery.dataTables.css') }}">
+
 <script type="text/javascript">
   $(document).ready(function() {
     $('table.prettytable').dataTable({
@@ -36,48 +37,51 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 
 <div id="search-volume-guests" style="width: 500px; height: 500px"></div>
 
-<h2>Current top referrers</h2>
+<div style="width: 900px">
 
-<table class="prettytable">
-  <thead>
-    <tr>
-      <th>First name</th>
-      <th>Diner ID</th>
-      <th>Number of referrals</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for (diner, count) in top_referrers %}
-    <tr>
-      <td>{{ diner.firstName }}</td>
-      <td>{{ diner.dinerID }}</td>
-      <td>{{ count }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+  <h2>Current top referrers</h2>
+
+  <table class="prettytable">
+    <thead>
+      <tr>
+        <th>First name</th>
+        <th>Diner ID</th>
+        <th>Number of referrals</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for (diner, count) in top_referrers %}
+      <tr>
+        <td>{{ diner.firstName }}</td>
+        <td>{{ diner.dinerID }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>Top voters in users who have registered within past 5 days</h2>
+  <table class="prettytable">
+  	<thead>
+  		<tr>
+  			<th>Diner</th>
+  			<th>Account creation date</th>
+  			<th>Vote count</th>
+  		</tr>
+  	</thead>
+  	<tbody>
+      {% for (vote_count, diner) in recent_voters %}
+      <tr>
+       <td>{{ diner.firstName }}</td>
+       <td>{{ diner.createDT }}</td>
+       <td>{{ vote_count }}</td>
+      </tr>
+      {% endfor %}
+  	</tbody>
+  </table>
 
 
-
-<h2>Top voters in users who have registered within past 5 days</h2>
-<table class="prettytable">
-	<thead>
-		<tr>
-			<th>Diner</th>
-			<th>Account creation date</th>
-			<th>Vote count</th>
-		</tr>
-	</thead>
-	<tbody>
-    {% for (vote_count, diner) in recent_voters %}
-    <tr>
-     <td>{{ diner.firstName }}</td>
-     <td>{{ diner.createDT }}</td>
-     <td>{{ vote_count }}</td>
-    </tr>
-    {% endfor %}
-	</tbody>
-</table>
+</div>
 
 <h2>Vote history for user</h2>
 
@@ -92,6 +96,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 
 <div id="noah-vote-history" style="width: 500px; height: 500px;">
 </div>
+
 
 <script>
   $(function(){
