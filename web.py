@@ -1,7 +1,7 @@
 import os
 from flask import Flask, render_template
 from flask.json import jsonify 
-from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog, RestaurantGallery, Review
+from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog, RestaurantGallery, Review, Invite, Invitee
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy import func
 from datetime import datetime, timedelta
@@ -13,25 +13,45 @@ app = Flask(__name__)
 def index():
     db_session = scoped_session(sessionmaker(bind=engine))
     Base.query = db_session.query_property()
-    restaurants_with_rating = Restaurant.query.filter(Restaurant.likevotes+Restaurant.dislikevotes>5).count()
+    restaurants_with_rating = Restaurant.query.filter(Restaurant.likeVotes+Restaurant.dislikeVotes>5).count()
     restaurants_with_pictures = RestaurantGallery.query.distinct(RestaurantGallery.restaurantID).filter(RestaurantGallery.isValid==1).count()
     # following doesn't work for some reason
     # restaurants_with_reviews = Review.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID)
     restaurants_with_reviews = db_session.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID).count()
-# select COUNT(DISTINCT RestaurantName) from reviews where isvalid = 1
-# select COUNT(DISTINCT restaurantID) from restaurantgallery  
-    search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID == None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
+
+# SELECT diner.FirstName, inviterdinerid, COUNT(DISTINCT InviteeUID) from inviteeinfo INNER JOIN inviteinfo ON inviteeinfo.fkinviteid=inviteinfo.inviteid 
+# INNER JOIN diner ON diner.dinerID=inviteinfo.inviterdinerid  GROUP BY inviterdinerid ORDER BY COUNT(DISTINCT InviteeUID) DESC
+
+# SELECT DISTINCT diner."firstName" AS "diner_firstName", diner."dinerID" AS "diner_dinerID", 
+# count(inviteeinfo."inviteeUID") AS count_1, count(inviteeinfo."inviteeUID") AS 
+# count_2 FROM diner JOIN inviteinfo ON diner."dinerID" = inviteinfo."inviterDinerID" 
+# JOIN inviteeinfo ON inviteinfo."inviteID" = inviteeinfo."fkInviteID" GROUP BY 
+# inviteinfo."inviterDinerID" ORDER BY count(inviteeinfo."inviteeUID")
+
+    # returns an array of Diner instances and a count
+    top_referrers = db_session.query(Diner, func.count(func.distinct(Invitee.inviteeUID))).\
+                    join(Invite).\
+                    join(Invitee).group_by(Invite.inviterDinerID).\
+                    order_by(func.count(Invitee.inviteeUID).desc()).all()
+
+
+    search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).\
+                          filter(SearchLog.userID == None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
     search_volume_guest = [ [1000*convert_timestamp(timestamp), count] for (timestamp, count) in search_volume_guest if timestamp is not None]
-    search_volume_registered = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).filter(SearchLog.userID != None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
+    search_volume_registered = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).\
+                          filter(SearchLog.userID != None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
     search_volume_registered = [ [1000*convert_timestamp(timestamp), count] for (timestamp, count) in search_volume_registered if timestamp is not None]
 
-    recent_voters = db_session.query(func.count(RestaurantVoteHistory.voteID), Diner).join(Diner).filter(Diner.createDT>x_days_ago(21)).group_by(Diner.dinerID).order_by(func.count(RestaurantVoteHistory.voteID).desc()).all()
+    recent_voters = db_session.query(func.count(RestaurantVoteHistory.voteID), Diner).\
+                    join(Diner).filter(Diner.createDT>x_days_ago(5)).group_by(Diner.dinerID).\
+                    order_by(func.count(RestaurantVoteHistory.voteID).desc()).all()
   
     diners = Diner.query.all()
     db_session.remove()
     return render_template('index.html', restaurants_with_rating=restaurants_with_rating,
                                          restaurants_with_pictures=restaurants_with_pictures,
-                                         restaurants_with_reviews=restaurants_with_reviews,    
+                                         restaurants_with_reviews=restaurants_with_reviews, 
+                                         top_referrers=top_referrers,   
                                          diners=diners, 
                                          recent_voters=recent_voters, 
                                          search_volume_guest=search_volume_guest,
@@ -45,8 +65,8 @@ def vote_history(diner_id):
     #returns instances of RestaurantVoteHistory, in order to get actual data, need to call method of the Class  
     noah_vote_history_raw = db_session.query(RestaurantVoteHistory, Diner, Restaurant).\
                              join(Restaurant).join(Diner).filter(RestaurantVoteHistory.isValid==1).\
-                             filter(Diner.dinerID==diner_id).order_by(RestaurantVoteHistory.votedate.desc()).all()
-    timestamps = [ convert_timestamp(vote.votedate) for (vote, diner, restaurant) in noah_vote_history_raw ]
+                             filter(Diner.dinerID==diner_id).order_by(RestaurantVoteHistory.voteDate.desc()).all()
+    timestamps = [ convert_timestamp(vote.voteDate) for (vote, diner, restaurant) in noah_vote_history_raw ]
     uniq_timestamps = set(timestamps)
     noah_vote_history = [ [1000*timestamp, count_timestamps(timestamp, timestamps)] for timestamp in uniq_timestamps ] 
 

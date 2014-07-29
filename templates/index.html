@@ -6,11 +6,24 @@
 	<script src="{{ url_for('static', filename='flot/jquery.flot.js') }}"></script>
 	<script src="{{ url_for('static', filename='flot/jquery.flot.time.js') }}"></script>
 	<script src="{{ url_for('static', filename='bootstrap3/js/bootstrap.js') }}"></script>
-	<script src="{{ url_for('static', filename='select2/select2.js') }}"></script>
+  <script src="{{ url_for('static', filename='select2/select2.js') }}"></script>
+	<script src="{{ url_for('static', filename='datatables/jquery.dataTables.min.js') }}"></script>
 	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap3/css/bootstrap.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='bootstrap3/css/bootstrap-theme.css') }}">
 	<link rel="stylesheet" href="{{ url_for('static', filename='select2/select2.css') }}">
-	<link rel="stylesheet" href="{{ url_for('static', filename='select2/select2-bootstrap.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='select2/select2-bootstrap.css') }}">
+	<link rel="stylesheet" href="{{ url_for('static', filename='datatables/jquery.dataTables.css') }}">
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('table.prettytable').dataTable({
+        "scrollY":        "300px",
+        "scrollCollapse": true,
+        "paging":         false,
+        "order": [[ 2, "desc" ]]
+      });
+  } );
+</script>
+
 </head>
 <body>
 <h1>REPORT STUFF</h1>
@@ -23,9 +36,31 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 
 <div id="search-volume-guests" style="width: 500px; height: 500px"></div>
 
-<h2>Top voters in users who have registered within past 21 days</h2>
+<h2>Current top referrers</h2>
 
-<table class="table table-striped">
+<table class="prettytable">
+  <thead>
+    <tr>
+      <th>First name</th>
+      <th>Diner ID</th>
+      <th>Number of referrals</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for (diner, count) in top_referrers %}
+    <tr>
+      <td>{{ diner.firstName }}</td>
+      <td>{{ diner.dinerID }}</td>
+      <td>{{ count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+
+<h2>Top voters in users who have registered within past 5 days</h2>
+<table class="prettytable">
 	<thead>
 		<tr>
 			<th>Diner</th>
@@ -36,7 +71,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 	<tbody>
     {% for (vote_count, diner) in recent_voters %}
     <tr>
-     <td>{{ diner.firstname }}</td>
+     <td>{{ diner.firstName }}</td>
      <td>{{ diner.createDT }}</td>
      <td>{{ vote_count }}</td>
     </tr>
@@ -50,7 +85,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 	<option>Select a user</option>
 	{% for diner in diners %}
     <option value="{{ diner.dinerID }}">
-     {{ diner.firstname }} ({{ diner.dinerID }})
+     {{ diner.firstName }} ({{ diner.dinerID }})
     </option>
 	{% endfor %}
 </select>
@@ -69,11 +104,11 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
     });
 
     $("#select-history-user").select2().on("change", function(event){ 
-      var dinerId = $(event.currentTarget).val();
-      if(!!!dinerId) return false; 
+      var dinerID = $(event.currentTarget).val();
+      if(!!!dinerID) return false; 
 
       $.ajax({
-        url: "/vote_history/" + dinerId, 
+        url: "/vote_history/" + dinerID, 
         type: "GET",
         dataType: "json",
         success: function(data) {
@@ -82,7 +117,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 			});
         },
         error: function() {
-        	alert("FUCKKKKKK for ID" + dinerId);
+        	alert("FUCKKKKKK for ID" + dinerID);
         }
       })
 

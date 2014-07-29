@@ -11,17 +11,17 @@ class Diner(Base):
 	__tablename__ = 'diner'
 	#declaring a method that returns Column
 	dinerID = Column(Integer, primary_key=True)
-	firstname = Column(String(30))
+	firstName = Column(String(30))
 	createDT = Column(DateTime)
 
 	def __repr__(self):
-		return '<Diner %r>' % (self.firstname)
+		return '<Diner %r>' % (self.firstName)
 
 class Restaurant(Base):
 	__tablename__ = 'restaurant'
 	restaurantID = Column(Integer, primary_key=True)
-	likevotes = Column(Integer)
-	dislikevotes = Column(Integer)
+	likeVotes = Column(Integer)
+	dislikeVotes = Column(Integer)
 	name = Column(String)
 	isValid = Column(Integer)
 
@@ -29,7 +29,7 @@ class RestaurantVoteHistory(Base):
 	__tablename__ = 'restaurantvotehistory'
 	voteID = Column(Integer, primary_key=True)
 	fkrestaurantID = Column(Integer, ForeignKey('restaurant.restaurantID'))
-	votedate = Column(DateTime)
+	voteDate = Column(DateTime)
 	fkdinerID = Column(Integer, ForeignKey('diner.dinerID'))
 	isValid = Column(Integer)
 
@@ -62,10 +62,20 @@ class Review(Base):
 
 	restaurant = relationship("Restaurant")
 	diner = relationship("Diner")
-	
 
+class Invite(Base):
+	__tablename__ = 'inviteinfo'
+	inviteID = Column(Integer, primary_key=True)
+	inviterDinerID = Column(Integer, ForeignKey('diner.dinerID'))
 
+	inviter = relationship("Diner")
 
-# select COUNT(DISTINCT RestaurantID) from restaurant a where likevotes+dislikevotes>5;
+class Invitee(Base):
+	__tablename__ = 'inviteeinfo'
+	inviteeID = Column(Integer, primary_key=True)
+	fkInviteID = Column(Integer, ForeignKey('inviteinfo.inviteID'))
+	inviteeUID = Column(String(150))
+
+	invite = relationship("Invite")
 
 
