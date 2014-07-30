@@ -14,8 +14,9 @@ def index():
     db_session = scoped_session(sessionmaker(bind=engine))
     Base.query = db_session.query_property()
     restaurants_with_rating = Restaurant.query.filter(Restaurant.likeVotes+Restaurant.dislikeVotes>5).count()
-    restaurants_with_pictures = RestaurantGallery.query.distinct(RestaurantGallery.restaurantID).filter(RestaurantGallery.isValid==1).count()
-    # following doesn't work for some reason
+    restaurants_with_pictures = db_session.query(RestaurantGallery.restaurantID).distinct(RestaurantGallery.restaurantID).\
+                                filter(RestaurantGallery.isValid==1).count()
+    # following doesn't work for some reason    
     # restaurants_with_reviews = Review.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID)
     restaurants_with_reviews = db_session.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID).count()
 
