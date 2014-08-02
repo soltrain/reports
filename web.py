@@ -23,17 +23,18 @@ def index():
 # SELECT diner.FirstName, inviterdinerid, COUNT(DISTINCT InviteeUID) from inviteeinfo INNER JOIN inviteinfo ON inviteeinfo.fkinviteid=inviteinfo.inviteid 
 # INNER JOIN diner ON diner.dinerID=inviteinfo.inviterdinerid  GROUP BY inviterdinerid ORDER BY COUNT(DISTINCT InviteeUID) DESC
 
-# SELECT DISTINCT diner."firstName" AS "diner_firstName", diner."dinerID" AS "diner_dinerID", 
-# count(inviteeinfo."inviteeUID") AS count_1, count(inviteeinfo."inviteeUID") AS 
-# count_2 FROM diner JOIN inviteinfo ON diner."dinerID" = inviteinfo."inviterDinerID" 
-# JOIN inviteeinfo ON inviteinfo."inviteID" = inviteeinfo."fkInviteID" GROUP BY 
-# inviteinfo."inviterDinerID" ORDER BY count(inviteeinfo."inviteeUID")
 
     # returns an array of Diner instances and a count
     top_referrers = db_session.query(Diner, func.count(func.distinct(Invitee.inviteeUID))).\
                     join(Invite).\
                     join(Invitee).group_by(Invite.inviterDinerID).\
                     order_by(func.count(Invitee.inviteeUID).desc()).all()
+
+# SELECT firstname, r.dinerID, COUNT(content) FROM reviews r, diner d WHERE r.dinerID=d.dinerID AND r.isvalid=1 GROUP BY r.dinerID ORDER BY COUNT(content) DESC;
+
+    recent_reviewers = db_session.query(Diner, func.count(Review.content)).join(Review).filter(Review.isValid==1).\
+                       filter(Diner.createDT>x_days_ago(5)).\
+                       group_by(Diner.dinerID).all()
 
 
     search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).\
@@ -54,7 +55,8 @@ def index():
                                          restaurants_with_reviews=restaurants_with_reviews, 
                                          top_referrers=top_referrers,   
                                          diners=diners, 
-                                         recent_voters=recent_voters, 
+                                         recent_voters=recent_voters,
+                                         recent_reviewers=recent_reviewers, 
                                          search_volume_guest=search_volume_guest,
                                          search_volume_registered=search_volume_registered)
 
