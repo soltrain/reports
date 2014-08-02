@@ -16,11 +16,17 @@
 
 <script type="text/javascript">
   $(document).ready(function() {
-    $('table.prettytable').dataTable({
+    $('table.prettytable3').dataTable({
         "scrollY":        "300px",
         "scrollCollapse": true,
         "paging":         false,
         "order": [[ 2, "desc" ]]
+      });
+    $('table.prettytable4').dataTable({
+        "scrollY":        "300px",
+        "scrollCollapse": true,
+        "paging":         false,
+        "order": [[ 3, "desc" ]]
       });
   } );
 </script>
@@ -41,10 +47,10 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 
   <h2>Current top referrers</h2>
 
-  <table class="prettytable">
+  <table class="prettytable3">
     <thead>
       <tr>
-        <th>First name</th>
+        <th>Username</th>
         <th>Diner ID</th>
         <th>Number of referrals</th>
       </tr>
@@ -52,7 +58,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
     <tbody>
       {% for (diner, count) in top_referrers %}
       <tr>
-        <td>{{ diner.firstName }}</td>
+        <td>{{ diner.userName }}</td>
         <td>{{ diner.dinerID }}</td>
         <td>{{ count }}</td>
       </tr>
@@ -60,11 +66,34 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
     </tbody>
   </table>
 
+  <h2>Top reviewers in users who have registered within past 5 days</h2>
+  <table class = "prettytable4">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Diner ID</th>
+        <th>Account creation date</th>
+        <th>Review count</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for (diner, review_count) in recent_reviewers %}
+      <tr>
+        <td>{{diner.userName}}</td>
+        <td>{{diner.dinerID}}</td>
+        <td>{{ diner.createDT }}</td>
+        <td>{{ review_count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
   <h2>Top voters in users who have registered within past 5 days</h2>
-  <table class="prettytable">
+  <table class="prettytable4">
   	<thead>
   		<tr>
-  			<th>Diner</th>
+  			<th>Username</th>
+        <th>Diner ID</th>
   			<th>Account creation date</th>
   			<th>Vote count</th>
   		</tr>
@@ -72,7 +101,8 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
   	<tbody>
       {% for (vote_count, diner) in recent_voters %}
       <tr>
-       <td>{{ diner.firstName }}</td>
+       <td>{{ diner.userName }}</td>
+       <td>{{ diner.dinerID}}</td>
        <td>{{ diner.createDT }}</td>
        <td>{{ vote_count }}</td>
       </tr>
@@ -89,7 +119,7 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 	<option>Select a user</option>
 	{% for diner in diners %}
     <option value="{{ diner.dinerID }}">
-     {{ diner.firstName }} ({{ diner.dinerID }})
+     {{ diner.userName }} ({{ diner.dinerID }})
     </option>
 	{% endfor %}
 </select>

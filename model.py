@@ -12,6 +12,7 @@ class Diner(Base):
 	#declaring a method that returns Column
 	dinerID = Column(Integer, primary_key=True)
 	firstName = Column(String(30))
+	userName = Column(String(30))
 	createDT = Column(DateTime)
 
 	def __repr__(self):
@@ -59,6 +60,8 @@ class Review(Base):
 	fkrestaurantID = Column(Integer, ForeignKey('restaurant.restaurantID'))
 	dinerID = Column(Integer, ForeignKey('diner.dinerID'))
 	isValid = Column(Integer)
+	content = Column(String(8000))
+	reviewDate = Column(DateTime)
 
 	restaurant = relationship("Restaurant")
 	diner = relationship("Diner")
