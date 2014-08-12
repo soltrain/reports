@@ -9,6 +9,9 @@ import pdb
 
 app = Flask(__name__)
 
+
+
+
 @app.route('/')
 def index():
     db_session = scoped_session(sessionmaker(bind=engine))
@@ -20,10 +23,8 @@ def index():
     # restaurants_with_reviews = Review.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID)
     restaurants_with_reviews = db_session.query(Review.fkrestaurantID).distinct(Review.fkrestaurantID).count()
 
-# SELECT diner.FirstName, inviterdinerid, COUNT(DISTINCT InviteeUID) from inviteeinfo INNER JOIN inviteinfo ON inviteeinfo.fkinviteid=inviteinfo.inviteid 
-# INNER JOIN diner ON diner.dinerID=inviteinfo.inviterdinerid  GROUP BY inviterdinerid ORDER BY COUNT(DISTINCT InviteeUID) DESC
-
-
+    # SELECT diner.FirstName, inviterdinerid, COUNT(DISTINCT InviteeUID) from inviteeinfo INNER JOIN inviteinfo ON inviteeinfo.fkinviteid=inviteinfo.inviteid 
+    # INNER JOIN diner ON diner.dinerID=inviteinfo.inviterdinerid  GROUP BY inviterdinerid ORDER BY COUNT(DISTINCT InviteeUID) DESC
     # returns an array of Diner instances and a count
     top_referrers = db_session.query(Diner, func.count(func.distinct(Invitee.inviteeUID))).\
                     join(Invite).\
@@ -36,6 +37,48 @@ def index():
                        filter(Diner.createDT>x_days_ago(5)).\
                        group_by(Diner.dinerID).all()
 
+    active_users = db_session.query(Diner, func.count(RestaurantVoteHistory.voteID)).\
+                   join(RestaurantVoteHistory).filter(RestaurantVoteHistory.voteDate>x_days_ago(1)).\
+                   group_by(Diner.dinerID).all()
+
+# select diner.dinerid, diner.username, recentsearches, recentvotes, recentreviews, recentpics, recentfavorites, recentwishlist, recentuseful from diner
+
+# LEFT JOIN (select userID, count(DT) as recentsearches from searchlog
+# where DATEDIFF(CURDATE(), DT) < 1
+# group by userID) se ON diner.dinerid=se.userID
+
+# LEFT JOIN (select fkdinerid, count(votedate) as recentvotes from restaurantvotehistory
+# where isvalid=1
+# and DATEDIFF(CURDATE(), votedate) < 1
+# group by fkdinerid) vo ON diner.dinerid=vo.fkdinerid
+
+# LEFT JOIN (select dinerid, count(*) as recentreviews from reviews 
+# where isvalid=1
+# and DATEDIFF(CURDATE(), reviewdate) < 1
+# group by DinerID) re ON diner.dinerid=re.dinerid 
+
+# LEFT JOIN (select restaurantgallery.fkuserid, count(*) as recentpics from restaurantgallery 
+# where isvalid=1
+# and DATEDIFF(CURDATE(), createdate) < 1
+# group by restaurantgallery.fkuserid) ga ON diner.dinerid=ga.fkuserid 
+ 
+# left join (select favourite.fkdinerid, count(*) as recentfavorites from favourite 
+# where isvalid=1
+# and DATEDIFF(CURDATE(), favouritedate) < 1
+# group by favourite.fkdinerid) fa ON diner.dinerid = fa.fkdinerid 
+
+# left join (select wishlist.fkdinerid, count(*) as recentwishlist from wishlist
+# where isvalid=1
+# and DATEDIFF(CURDATE(), wishdate) < 1
+# group by wishlist.fkdinerid) wi ON diner.dinerid = wi.fkdinerid 
+
+# left join (select reviewpraise.fkdinerid, count(*) as recentuseful from reviewpraise
+# where isvalid=1
+# and DATEDIFF(CURDATE(), praisedate) < 1
+# group by reviewpraise.fkdinerid) us ON diner.dinerid = us.fkdinerid 
+
+# where recentsearches is not null or recentvotes is not null or recentreviews is not null or recentfavorites is not null or recentwishlist 
+# is not null or recentuseful is not null or recentpics is not null
 
     search_volume_guest = db_session.query(SearchLog.DT, func.count(SearchLog.IP)).distinct(SearchLog.IP).\
                           filter(SearchLog.userID == None).group_by(func.date(SearchLog.DT)).order_by(SearchLog.DT.desc()).all()
@@ -53,6 +96,7 @@ def index():
     return render_template('index.html', restaurants_with_rating=restaurants_with_rating,
                                          restaurants_with_pictures=restaurants_with_pictures,
                                          restaurants_with_reviews=restaurants_with_reviews, 
+                                         active_users=active_users,
                                          top_referrers=top_referrers,   
                                          diners=diners, 
                                          recent_voters=recent_voters,

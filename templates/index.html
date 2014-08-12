@@ -44,6 +44,25 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
 <div id="search-volume-guests" style="width: 500px; height: 500px"></div>
 
 <div style="width: 900px">
+  <h2>Active Users</h2>
+   <table class="prettytable3">
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Diner ID</th>
+        <th>Number of referrals</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for (diner, count) in active_users %}
+      <tr>
+        <td>{{ diner.userName }}</td>
+        <td>{{ diner.dinerID }}</td>
+        <td>{{ count }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table> 
 
   <h2>Current top referrers</h2>
 
