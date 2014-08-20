@@ -3,7 +3,7 @@ from flask import Flask, render_template
 from flask.json import jsonify 
 from model import Restaurant, RestaurantVoteHistory, Diner, engine, Base, SearchLog, RestaurantGallery, Review, Invite, Invitee
 from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from datetime import datetime, timedelta
 import pdb
 
@@ -37,9 +37,37 @@ def index():
                        filter(Diner.createDT>x_days_ago(5)).\
                        group_by(Diner.dinerID).all()
 
-    active_users = db_session.query(Diner, func.count(RestaurantVoteHistory.voteID)).\
-                   join(RestaurantVoteHistory).filter(RestaurantVoteHistory.voteDate>x_days_ago(1)).\
-                   group_by(Diner.dinerID).all()
+
+# example of sqlalchemy subquery
+# SELECT users.*, adr_count.address_count FROM users 
+# LEFT OUTER JOIN (SELECT user_id, count(*) AS address_count FROM addresses 
+    # GROUP BY user_id) AS adr_count ON users.id=adr_count.user_id
+
+# stmt = session.query(Address.user_id, func.count('*').\
+#          label('address_count')).\
+#          group_by(Address.user_id).subquery()
+
+# session.query(User, stmt.c.address_count).\
+#      outerjoin(stmt, User.id==stmt.c.user_id).order_by(User.id): 
+
+
+
+    recentvotes = db_session.query(RestaurantVoteHistory.fkdinerID, func.count(RestaurantVoteHistory.voteID).label('a')).filter(RestaurantVoteHistory.voteDate>x_days_ago(1)).\
+                  group_by(RestaurantVoteHistory.fkdinerID).subquery()
+
+    recentreviews = db_session.query(Review.dinerID, func.count(Review.id).label('b')).filter(Review.reviewDate>x_days_ago(1)).\
+                  group_by(Review.dinerID).subquery()
+
+    recentsearches = db_session.query(SearchLog.userID, func.count(SearchLog.id).label('c')).filter(SearchLog.DT>x_days_ago(1)).\
+                  group_by(SearchLog.userID).subquery()
+
+    active_users = db_session.query(Diner, recentvotes.c.a, recentreviews.c.b, recentsearches.c.c).\
+                   filter(or_(recentvotes.c.a != None, recentreviews.c.b != None, recentsearches.c.c != None)).\
+                   outerjoin(recentvotes).\
+                   outerjoin(recentreviews).\
+                   outerjoin(recentsearches)
+                                      #filter(recentreviews!=None).\
+
 
 # select diner.dinerid, diner.username, recentsearches, recentvotes, recentreviews, recentpics, recentfavorites, recentwishlist, recentuseful from diner
 

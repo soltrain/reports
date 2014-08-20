@@ -42,7 +42,9 @@ class SearchLog(Base):
 	id = Column(Integer, primary_key=True)
 	DT = Column(DateTime)
 	IP = Column(String(50))
-	userID = Column(Integer)
+	userID = Column(Integer, ForeignKey('diner.dinerID'))
+
+	diner = relationship("Diner")
 
 class RestaurantGallery(Base):
 	__tablename__ = 'restaurantgallery'
