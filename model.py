@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, String, DateTime, Foreign
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, backref
 
-engine = create_engine("mysql+mysqldb://noah:noahgogogo@112.124.110.150:3306/DB_IS", convert_unicode=True)
+engine = create_engine("mysql+mysqldb://passwordandipaddressgohere", convert_unicode=True)
 
 #for making the model
 Base = declarative_base()

@@ -61,6 +61,9 @@ Number of restaurants that have &gt;1 picture: {{restaurants_with_pictures}} <br
       <tr>
         <td>{{ diner.userName }}</td>
         <td>{{ diner.dinerID }}</td>
+        {% if votecount == '1' %}
+          {% votecount = '9999' %}
+        {% endif %}
         <td>{{ votecount }}</td>
         <td>{{ reviewcount }} </td>
         <td>{{ searchcount }}</td>
